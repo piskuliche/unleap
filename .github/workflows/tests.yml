@@ -1,0 +1,32 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-name: unleap
+          create-args: >-
+            python=3.12
+            ambertools
+            rdkit
+            pytest
+          condarc: |
+            channels:
+              - conda-forge
+      - name: Install unleap
+        run: pip install --no-deps -e .
+      - name: Run tests
+        run: |
+          export AMBERHOME="${AMBERHOME:-$CONDA_PREFIX}"
+          python -m pytest -q -rs

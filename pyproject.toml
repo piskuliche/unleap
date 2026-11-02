@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "unleap"
+dynamic = ["version"]
+description = "Recover a ligand's mol2, frcmod and OFF lib from a built Amber parm7/rst7 system"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Zeke Piskulich", email = "piskulichz@gmail.com" }]
+requires-python = ">=3.9"
+# AmberTools (tleap, sander, gaff*.dat) is required at runtime but is not pip-installable;
+# see the installation docs. ParmEd ships with AmberTools and is also on PyPI.
+dependencies = ["parmed", "rdkit", "numpy", "scipy"]
+keywords = ["amber", "ambertools", "tleap", "gaff", "force field", "frcmod", "ligand", "molecular dynamics"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Science/Research",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Chemistry",
+]
+
+[project.optional-dependencies]
+test = ["pytest"]
+docs = ["sphinx>=7", "sphinx-rtd-theme>=2"]
+
+[project.urls]
+Homepage = "https://github.com/piskuliche/unleap"
+Documentation = "https://piskuliche.github.io/unleap/"
+Issues = "https://github.com/piskuliche/unleap/issues"
+
+[project.scripts]
+unleap = "unleap.cli:main"
+
+[tool.setuptools]
+packages = ["unleap"]
+
+[tool.setuptools.dynamic]
+version = { attr = "unleap.__version__" }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
