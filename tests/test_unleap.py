@@ -220,3 +220,24 @@ def test_sdf_is_rdkit_readable(charged_complex, tmp_path):
     assert rc == 0, report
     mol = Chem.MolFromMolFile(str(tmp_path / "LIG.sdf"), removeHs=False)
     assert Chem.MolToSmiles(Chem.RemoveHs(mol)) == Chem.CanonSmiles("[O-]C(=O)c1ccc(Cl)cc1")
+
+
+def test_scee_scnb_written_only_when_non_default(gaff2_box, tmp_path_factory, tmp_path):
+    src, parm, rst = gaff2_box
+    rc, report = run(parm, rst, tmp_path / "default")
+    assert rc == 0, report
+    for f in ("LIG.frcmod", "LIG.full.frcmod"):
+        assert "SCEE" not in open(tmp_path / "default" / f).read()
+
+    d = str(tmp_path_factory.mktemp("scee"))
+    for f in ("LIG.mol2", "LIG.frcmod"):
+        os.symlink(os.path.join(src, f), os.path.join(d, f))
+    with open(os.path.join(d, "scee.frcmod"), "w") as fh:
+        fh.write("non-default 1-4 scaling\nDIHE\n"
+                 "c3-c -ns-ca   1    3.000       0.000           2.000    SCEE=1.0 SCNB=1.0\n\n")
+    parm, rst = build(d, frcmods=("LIG.frcmod", "scee.frcmod"))
+    rc, report = run(parm, rst, tmp_path / "custom")
+    assert rc == 0, report
+    dihe = sections(tmp_path / "custom" / "LIG.frcmod")["DIHE"]
+    scaled = [l for l in dihe if "SCEE" in l]
+    assert scaled and all(l.startswith("c3-c -ns-ca") and "SCEE=1 SCNB=1" in l for l in scaled)

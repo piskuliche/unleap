@@ -1,6 +1,13 @@
 Changelog
 =========
 
+0.2.1
+-----
+
+* frcmod DIHE lines carry ``SCEE=``/``SCNB=`` only when a term's 1-4 scaling is not Amber's
+  default (1.2 / 2.0). leap treats explicit values specially, so default terms now look like
+  parmchk2's output.
+
 0.2.0
 -----
 

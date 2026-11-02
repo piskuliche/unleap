@@ -12,6 +12,9 @@ _TOL = dict(rel_tol=1e-5, abs_tol=1e-5)
 # it writes is inflated by ~4.3e-7 when read back exactly; undo it so values round-trip.
 LEAP_DEG_CORRECTION = (math.pi / 180.0) / 0.0174533
 
+# Amber's default 1-4 scaling factors
+DEFAULT_SCEE, DEFAULT_SCNB = 1.2, 2.0
+
 
 def improper_atoms(d):
     """Improper atoms ordered with the central atom third (frcmod convention).
@@ -238,8 +241,11 @@ def render(pset, title):
         terms = [tl] if isinstance(tl, pmd.DihedralType) else list(tl)
         for n, t in enumerate(terms):
             per = abs(t.per) * (1 if n == len(terms) - 1 else -1)
-            lines.append(f"{a1:<2}-{a2:<2}-{a3:<2}-{a4:<2} {1:4d} {t.phi_k:14.8f} {t.phase:8.3f} {per:5.1f}"
-                         f"    SCEE={t.scee:g} SCNB={t.scnb:g}")
+            line = f"{a1:<2}-{a2:<2}-{a3:<2}-{a4:<2} {1:4d} {t.phi_k:14.8f} {t.phase:8.3f} {per:5.1f}"
+            # leap treats an explicit SCEE/SCNB specially, so write them only when non-default
+            if not (_close(t.scee, DEFAULT_SCEE) and _close(t.scnb, DEFAULT_SCNB)):
+                line += f"    SCEE={t.scee:g} SCNB={t.scnb:g}"
+            lines.append(line)
     lines += ["", "IMPROPER"]
     for (a1, a2, a3, a4), t in pset.improper_periodic_types.items():
         lines.append(f"{a1:<2}-{a2:<2}-{a3:<2}-{a4:<2} {t.phi_k:14.8f} {t.phase:8.3f} {t.per:5.1f}")

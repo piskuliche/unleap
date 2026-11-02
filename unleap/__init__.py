@@ -2,7 +2,7 @@
 
 import logging
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 
 __all__ = ["extract_ligand", "extract_ligand_from_structure", "LigandParams", "CheckResult",
            "BaseFF", "UnleapError", "__version__"]
