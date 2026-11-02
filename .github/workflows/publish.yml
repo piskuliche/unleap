@@ -2,8 +2,8 @@
 # pypi.org and test.pypi.org: owner piskuliche, repository unleap, workflow publish.yml,
 # environment pypi / testpypi respectively.
 #
-#   manual run (Actions tab -> publish -> Run workflow)  -> TestPyPI only
-#   push a tag vX.Y.Z                                     -> TestPyPI, then PyPI
+#   manual run (Actions tab -> publish -> Run workflow)  -> TestPyPI only (dry run)
+#   push a tag vX.Y.Z                                     -> PyPI
 name: publish
 
 on:
@@ -33,6 +33,7 @@ jobs:
           path: dist/
 
   testpypi:
+    if: github.event_name == 'workflow_dispatch'
     needs: build
     runs-on: ubuntu-latest
     environment:
@@ -52,7 +53,7 @@ jobs:
 
   pypi:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: testpypi
+    needs: build
     runs-on: ubuntu-latest
     environment:
       name: pypi
