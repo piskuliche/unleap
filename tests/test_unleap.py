@@ -67,7 +67,10 @@ def test_custom_parameters_are_recovered(gaff2_box, tmp_path_factory, tmp_path):
     dihe = [l for l in sec["DIHE"] if l.startswith("c3-c -ns-ca")]
     assert len(dihe) == 1 and "3.00000000" in dihe[0] and " 0.000 " in dihe[0]
     assert any(l.startswith("oh") and "1.90000000" in l and "0.20000000" in l for l in sec["NONB"])
-    assert [l.split()[0] for l in sec["NONB"]] == ["oh"]
+    # besides the edit, only types parmchk2 itself overrode may appear (newer AmberTools'
+    # parmchk2 writes NONBON entries, e.g. for ns, that then differ from gaff2.dat)
+    parmchk2 = {l.split()[0] for l in sections(os.path.join(src, "LIG.frcmod")).get("NONB", [])}
+    assert {l.split()[0] for l in sec["NONB"]} - parmchk2 == {"oh"}
 
 
 def test_complex_autodetect_and_bond_orders(charged_complex, tmp_path):
