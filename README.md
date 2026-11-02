@@ -34,6 +34,16 @@ Hydrogen mass repartitioning is detected and undone. The output directory gets `
 `LIG.full.frcmod`, `LIG.lib`, `LIG.mol2`, `LIG.sdf`, a `tleap.in` that loads them, and a
 `report.txt` with the PASS/FAIL validation results.
 
+From Python, the same run returns the files as strings, plus structured check results:
+
+```python
+import unleap
+
+res = unleap.extract_ligand("complex.parm7", "complex.rst7", resname="LIG")
+res.ok, res.base.name, res.frcmod, res.lib, res.mol2   # PASS/FAIL, base FF, file contents
+res.write("lig_out")                                   # optional: write them like the CLI
+```
+
 ## Documentation
 
 **<https://piskuliche.github.io/unleap/>**: the user guide, developer guide and API reference.

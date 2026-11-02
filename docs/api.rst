@@ -2,7 +2,25 @@ API reference
 =============
 
 .. automodule:: unleap
-   :members: UnleapError
+
+.. autofunction:: unleap.extract_ligand
+
+.. autofunction:: unleap.extract_ligand_from_structure
+
+.. autoclass:: unleap.LigandParams
+   :members: ok, write, to_dict, files
+
+.. autoclass:: unleap.CheckResult
+   :members: to_dict
+
+.. autoclass:: unleap.BaseFF
+   :no-index:
+
+Python API internals
+--------------------
+
+.. automodule:: unleap.api
+   :members: pick_base
 
 Command line
 ------------

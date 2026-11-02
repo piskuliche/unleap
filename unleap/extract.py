@@ -1,5 +1,6 @@
 """Load the system, strip out the ligand, and check it can be expressed as mol2/frcmod/lib."""
 
+import copy
 import math
 from dataclasses import dataclass, field
 
@@ -79,8 +80,22 @@ def load(parm7, crd, frame=0):
     return struct
 
 
-def strip(struct, mask, parm7):
-    """Extract the ligand and run the topology sanity checks."""
+def check_parm(struct):
+    if not isinstance(struct, pmd.amber.AmberParm) or isinstance(struct, pmd.amber.ChamberParm):
+        raise UnleapError("not a plain Amber topology (Chamber/AMOEBA are unsupported); "
+                          "pass a parmed.amber.AmberParm")
+    if struct.coordinates is None:
+        raise UnleapError("the structure has no coordinates")
+    return struct
+
+
+def strip(struct, mask):
+    """Extract the ligand and run the topology sanity checks. ``struct`` is not modified.
+
+    The ligand is stripped from ``copy.copy(struct)``, which AmberParm rebuilds from
+    ``parm_data``; after editing a structure through the object model, call
+    ``struct.remake_parm()`` first.
+    """
     sel = pmd.amber.AmberMask(struct, mask).Selection()
     idx = {i for i, s in enumerate(sel) if s}
     if not idx:
@@ -96,10 +111,8 @@ def strip(struct, mask, parm7):
             raise UnleapError(f"ligand atom {b.atom1.name if b.atom1.idx in idx else b.atom2.name} is bonded "
                                    "outside the selection (covalent ligand); this is unsupported")
 
-    # strip a fresh copy: AmberParm.strip rebuilds the LJ tables, Structure slicing does not
-    lig = load_parm(parm7)
-    lig.coordinates = struct.coordinates
-    lig.box = struct.box
+    # strip a full copy: AmberParm.strip rebuilds the LJ tables, Structure slicing does not
+    lig = copy.copy(struct)
     lig.strip(f"!({mask})")
     out = Ligand(struct, lig, mask)
     out.warnings += _nonbonded_checks(struct, idx)

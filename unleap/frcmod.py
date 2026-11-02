@@ -220,9 +220,10 @@ def diff_params(full, base):
     return pset, counts
 
 
-def write(pset, path, title):
-    """frcmod writer modeled on ParmEd's, but keeping prmtop precision (ParmEd rounds req/theteq
-    to 3 decimals, which breaks GAFF2's 4-decimal bond lengths) and the prmtop improper order."""
+def render(pset, title):
+    """frcmod text, modeled on ParmEd's writer but keeping prmtop precision (ParmEd rounds
+    req/theteq to 3 decimals, which breaks GAFF2's 4-decimal bond lengths) and the prmtop
+    improper order."""
     lines = [title.rstrip("\r\n"), "MASS"]
     for name, t in pset.atom_types.items():
         lines.append(f"{name:<6}{t.mass:8.4f}")
@@ -246,5 +247,9 @@ def write(pset, path, title):
     for name, t in pset.atom_types.items():
         lines.append(f"{name:<2}  {t.rmin:12.8f} {t.epsilon:12.8f}")
     lines += ["", ""]
+    return "\n".join(lines)
+
+
+def write(pset, path, title):
     with open(path, "w") as fh:
-        fh.write("\n".join(lines))
+        fh.write(render(pset, title))

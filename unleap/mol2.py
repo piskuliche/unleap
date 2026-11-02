@@ -31,23 +31,26 @@ def bond_orders(lig):
     return orders, mol
 
 
-def write_sdf(mol, ligand, path, name):
+def render_sdf(mol, ligand, name):
     """SDF with bond orders and formal charges: the RDKit/viewer-friendly copy (RDKit's mol2
     reader only understands SYBYL types, not GAFF)."""
     mol = Chem.Mol(mol)
     mol.SetProp("_Name", name)
     for atom, a in zip(mol.GetAtoms(), ligand.lig.atoms):
         atom.SetProp("molFileAlias", a.name)
-    Chem.MolToMolFile(mol, path, kekulize=True)
+    return Chem.MolToMolBlock(mol, kekulize=True)
 
 
-def write(ligand, path, name, sdf_path=None):
-    """Write the mol2 (and SDF, if bond orders were assigned); returns False when bond orders
-    fell back to all-single."""
+def write_sdf(mol, ligand, path, name):
+    with open(path, "w") as fh:
+        fh.write(render_sdf(mol, ligand, name))
+
+
+def render(ligand, name):
+    """(mol2 text, SDF text); the SDF is None when RDKit could not assign bond orders, in which
+    case the mol2 bonds are all single."""
     lig = ligand.lig
     orders, mol = bond_orders(lig)
-    if mol is not None and sdf_path:
-        write_sdf(mol, ligand, sdf_path, name)
     bonds = sorted(tuple(sorted((b.atom1.idx, b.atom2.idx))) for b in lig.bonds)
     lines = ["@<TRIPOS>MOLECULE", name,
              f"{len(lig.atoms):5d} {len(bonds):5d} {1:5d} {0:5d} {0:5d}",
@@ -61,6 +64,17 @@ def write(ligand, path, name, sdf_path=None):
         lines.append(f"{n:6d}{i + 1:6d}{j + 1:6d} {order}")
     lines += ["@<TRIPOS>SUBSTRUCTURE",
               f"{1:6d} {name:<8s} {1:6d} TEMP              0 ****  ****    0 ROOT", ""]
+    sdf = render_sdf(mol, ligand, name) if mol is not None else None
+    return "\n".join(lines), sdf
+
+
+def write(ligand, path, name, sdf_path=None):
+    """Write the mol2 (and SDF, if bond orders were assigned); returns False when bond orders
+    fell back to all-single."""
+    text, sdf = render(ligand, name)
     with open(path, "w") as fh:
-        fh.write("\n".join(lines))
-    return orders is not None
+        fh.write(text)
+    if sdf is not None and sdf_path:
+        with open(sdf_path, "w") as fh:
+            fh.write(sdf)
+    return sdf is not None

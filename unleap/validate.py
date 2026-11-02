@@ -1,5 +1,7 @@
 """Round-trip check: rebuild the ligand with tleap from the outputs and compare to the original."""
 
+import copy
+import logging
 import math
 import os
 from dataclasses import dataclass, field
@@ -10,19 +12,26 @@ from . import UnleapError
 from .amber import run_tleap, sander_energy
 from .frcmod import improper_atoms, same_dihedral
 
+log = logging.getLogger("unleap")
+
 ENERGY_TERMS = ("BOND", "ANGLE", "DIHED", "VDWAALS", "EEL", "1-4 VDW", "1-4 EEL")
 
 
 @dataclass
 class CheckResult:
+    """One rebuild-and-compare check: ``details`` lists each mismatch (empty when ``ok``)."""
+
     name: str
     ok: bool
     details: list = field(default_factory=list)
 
+    def to_dict(self):
+        return {"name": self.name, "ok": self.ok, "details": list(self.details)}
 
-def save_stripped(ligand, prefix):
+
+def save_stripped(struct, prefix):
     """Write the stripped original ligand (non-periodic) for comparison."""
-    lig = ligand.lig
+    lig = copy.copy(struct)
     lig.box = None
     lig.save(prefix + ".parm7", overwrite=True)
     lig.save(prefix + ".rst7", format="rst7", overwrite=True)
@@ -96,11 +105,19 @@ def compare_energies(e_orig, e_new):
     return bad
 
 
-def run(ligand, outdir, name, preamble, files):
-    """Rebuild three ways and compare each to the stripped original. Returns [CheckResult]."""
-    workdir = os.path.join(outdir, "check")
+def run(ligand, name, preamble, texts, workdir):
+    """Rebuild three ways in ``workdir`` and compare each to the stripped original.
+
+    ``texts`` maps "frcmod", "full", "lib" and "mol2" to the rendered file contents.
+    Returns ([CheckResult], original energies).
+    """
     os.makedirs(workdir, exist_ok=True)
-    orig_parm, orig_rst = save_stripped(ligand, os.path.join(outdir, f"{name}.orig"))
+    files = {}
+    for key, ext in (("frcmod", ".frcmod"), ("full", ".full.frcmod"), ("lib", ".lib"), ("mol2", ".mol2")):
+        files[key] = os.path.abspath(os.path.join(workdir, name + ext))
+        with open(files[key], "w") as fh:
+            fh.write(texts[key])
+    orig_parm, orig_rst = save_stripped(ligand.lig, os.path.join(workdir, f"{name}.orig"))
     orig = pmd.load_file(orig_parm, orig_rst)
     e_orig = sander_energy(orig_parm, orig_rst, workdir, "orig")
 
@@ -111,6 +128,7 @@ def run(ligand, outdir, name, preamble, files):
     }
     results = []
     for n, (label, body) in enumerate(variants.items()):
+        log.info("rebuilding: %s", label)
         tag = f"rebuild{n}"
         parm, rst = os.path.join(workdir, f"{tag}.parm7"), os.path.join(workdir, f"{tag}.rst7")
         try:

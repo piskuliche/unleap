@@ -12,6 +12,8 @@ checks every parameter and a sander energy breakdown against the original topolo
 
    unleap -p complex.parm7 -c complex.rst7 -o lig_out
 
+or, from Python, ``unleap.extract_ligand("complex.parm7", "complex.rst7")`` (:doc:`user/python_api`).
+
 Typical uses:
 
 * The original ligand inputs are gone, or you no longer trust they match what was simulated.
@@ -25,6 +27,7 @@ Typical uses:
    user/installation
    user/quickstart
    user/options
+   user/python_api
    user/outputs
    user/validation
    user/limitations
@@ -44,3 +47,4 @@ Typical uses:
    :caption: Reference
 
    api
+   changelog
